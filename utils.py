@@ -7,7 +7,9 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm  # For progress bars
-
+from torch.utils.data import DataLoader, TensorDataset
+import torch.backends.mps 
+import torch.cuda 
 
 def find_optimal_batch_size(model, trainset, device, num_workers, start_size=32, max_size=512):
     """Find the optimal batch size by testing increasingly larger sizes until OOM error occurs.
@@ -38,7 +40,7 @@ def find_optimal_batch_size(model, trainset, device, num_workers, start_size=32,
     while batch_size <= max_size:
         try:
             # Create a dataloader with the current batch size
-            loader = torch.utils.data.DataLoader(
+            loader = DataLoader(
                 trainset, batch_size=batch_size, shuffle=True, 
                 num_workers=num_workers, pin_memory=True
             )

@@ -26,7 +26,7 @@ def evaluate_cifar100_test(model, testloader, device):
             total += labels.size(0)
             correct += predicted.eq(labels.to(device)).sum().item()
 
-    clean_accuracy = 100. * correct / total
+    clean_accuracy = 100.0 * correct / total
     # print(f"Clean CIFAR-100 Test Accuracy: {clean_accuracy:.2f}%")
     return predictions, clean_accuracy
 
