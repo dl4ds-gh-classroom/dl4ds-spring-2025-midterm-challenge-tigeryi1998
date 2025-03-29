@@ -9,7 +9,7 @@
 #$ -l h_rt=1:00:00                          # Time limit
 #$ -N simplecnn                             # job_name
 #$ -j y                                     # merge stdout and stderr 
-#$ -o /projectnb/dl4ds/students/tigeryi     # output folder
+#$ -o /projectnb/dl4ds/students/tigeryi/dl4ds-spring-2025-midterm-challenge-tigeryi1998    # output folder
 
 module load miniconda
 conda activate dl4ds
