@@ -222,7 +222,7 @@ def main():
     # Split train into train and validation (80/20 split)
     
     ### TODO -- Calculate training set size
-    train_size = 0.8 * len(trainset)  
+    train_size = int(0.8 * len(trainset))  
 
     ### TODO -- Calculate validation set size
     val_size = len(trainset) - train_size 
