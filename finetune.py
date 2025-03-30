@@ -193,7 +193,7 @@ def main():
         "learning_rate": 0.05,  # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 5e-4,    # L2 penalty
-        "epochs": 20,            # Train for longer in a real scenario
+        "epochs": 50,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
