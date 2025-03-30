@@ -23,7 +23,7 @@ import json
 # finetune.
 ################################################################################
 
-# Part 2: Predefined Model
+# Part 3: Pretrain + Finetune
 class DenseNet_CIFAR100(nn.Module):
     def __init__(self, num_classes=100):
         super(DenseNet_CIFAR100, self).__init__()
