@@ -329,7 +329,7 @@ def main():
     
     # best_val_acc = 0.0
 
-    early_stopping = EarlyStopping(patience=5, delta=1e-3, path=model_path)
+    early_stopping = EarlyStopping(patience=5, delta=1e-2, path=model_path)
 
     for epoch in range(start_epoch, CONFIG["epochs"]):
         train_loss, train_acc = train(epoch, model, trainloader, optimizer, criterion, CONFIG)
