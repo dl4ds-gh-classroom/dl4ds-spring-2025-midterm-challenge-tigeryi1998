@@ -157,10 +157,10 @@ def main():
     CONFIG = {
         "model": "DenseNet",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.01,    # Learning rate for SGD
+        "learning_rate": 0.1,    # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
-        "weight_decay": 1e-3,    # L2 penalty
-        "epochs": 50,             # Train for longer in a real scenario
+        "weight_decay": 1e-4,    # L2 penalty
+        "epochs": 50,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
@@ -272,7 +272,7 @@ def main():
     wandb.watch(model)  # watch the model gradients
 
     # Check if the pre-trained model exists
-    model_path = "best_model.pth"
+    model_path = "densenet.pth"
     start_epoch = 0  # Default to 0 if no model is found
 
     if os.path.exists(model_path):
