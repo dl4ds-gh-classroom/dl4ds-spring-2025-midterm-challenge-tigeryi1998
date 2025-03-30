@@ -44,7 +44,7 @@ class DenseNet_CIFAR100(nn.Module):
         self.densenet.classifier = nn.Linear(in_features, num_classes)
 
         # Freeze all layers except the final classifier layer
-        for param in self.densenet.parameters():
+        for param in self.densenet.features.parameters():
             param.requires_grad = False 
 
         # Unfreeze the final classifier layer to fine-tune it
@@ -165,10 +165,10 @@ def main():
     CONFIG = {
         "model": "DenseNet",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.001,  # Learning rate for SGD
+        "learning_rate": 0.01,  # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 1e-4,    # L2 penalty
-        "epochs": 10,            # Train for longer in a real scenario
+        "epochs": 20,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
