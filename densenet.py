@@ -157,10 +157,10 @@ def main():
     CONFIG = {
         "model": "DenseNet",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.1,    # Learning rate for SGD
+        "learning_rate": 0.05,    # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
-        "weight_decay": 1e-4,    # L2 penalty
-        "epochs": 50,            # Train for longer in a real scenario
+        "weight_decay": 5e-4,    # L2 penalty
+        "epochs": 75,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
@@ -264,15 +264,15 @@ def main():
     # ### TODO -- you can optionally add a LR scheduler
 
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR by a factor of 0.1 every 5 epochs
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)  # Reduce LR when validation loss plateaus
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)  # Reduce LR when validation loss plateaus
 
     # Initialize wandb
     wandb.init(project="-sp25-ds542-challenge", config=CONFIG)
     wandb.watch(model)  # watch the model gradients
 
     # Check if the pre-trained model exists
-    model_path = "densenet.pth"
+    model_path = "densenet2.pth"
     start_epoch = 0  # Default to 0 if no model is found
 
     if os.path.exists(model_path):
@@ -301,7 +301,8 @@ def main():
         val_loss, val_acc = validate(model, valloader, criterion, CONFIG["device"])
         
         # Update the learning rate scheduler
-        scheduler.step()
+        # val_loss: update ReduceLROnPlateau scheduler
+        scheduler.step(val_loss)
 
         # log to WandB
         wandb.log({

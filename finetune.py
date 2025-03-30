@@ -49,7 +49,7 @@ class DenseNet_CIFAR100(nn.Module):
 
         # Unfreeze the dense blocks
         for param in self.densenet.features[3:].parameters():
-            param.requires_grad = False 
+            param.requires_grad = True 
 
         # Unfreeze the final classifier layer to fine-tune it
         for param in self.densenet.classifier.parameters():
@@ -172,7 +172,7 @@ def main():
         "learning_rate": 0.05,  # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 5e-4,    # L2 penalty
-        "epochs": 10,            # Train for longer in a real scenario
+        "epochs": 20,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
@@ -276,8 +276,8 @@ def main():
     # ### TODO -- you can optionally add a LR scheduler
 
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR by a factor of 0.1 every 5 epochs
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)  # Reduce LR when validation loss plateaus
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)  # Reduce LR when validation loss plateaus
 
     # Initialize wandb
     wandb.init(project="-sp25-ds542-challenge", config=CONFIG)
@@ -313,7 +313,7 @@ def main():
         val_loss, val_acc = validate(model, valloader, criterion, CONFIG["device"])
         
         # Update the learning rate scheduler
-        scheduler.step()
+        scheduler.step(val_loss)
 
         # log to WandB
         wandb.log({
