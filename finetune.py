@@ -156,6 +156,27 @@ def validate(model, valloader, criterion, device):
     return val_loss, val_acc
 
 
+# add early stopping class
+class EarlyStopping:
+    def __init__(self, patience=10, delta=0, path='best_model.pth'):
+        self.patience = patience
+        self.delta = delta
+        self.path = path
+        self.best_acc = 0.0  # Track the best validation accuracy
+        self.counter = 0
+
+    def __call__(self, val_acc, model):
+        # If validation accuracy improves by at least `delta`
+        if val_acc > self.best_acc + self.delta:
+            self.best_acc = val_acc
+            self.counter = 0
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                print("Early stopping triggered!")
+                return True
+        return False
+
 def main():
 
     ############################################################################
@@ -308,6 +329,8 @@ def main():
     
     # best_val_acc = 0.0
 
+    early_stopping = EarlyStopping(patience=5, delta=1e-3, path=model_path)
+
     for epoch in range(start_epoch, CONFIG["epochs"]):
         train_loss, train_acc = train(epoch, model, trainloader, optimizer, criterion, CONFIG)
         val_loss, val_acc = validate(model, valloader, criterion, CONFIG["device"])
@@ -324,6 +347,11 @@ def main():
             "val_acc": val_acc,
             "lr": optimizer.param_groups[0]["lr"] # Log learning rate
         })
+
+        # Check early stopping first
+        if early_stopping(val_acc, model):
+            print(f"Early stopping at epoch {epoch + 1}")
+            break  # Stop training if early stopping is triggered
 
         # Save the best model (based on validation accuracy)
         if val_acc > best_val_acc:
