@@ -30,6 +30,32 @@ For the SimpleCNN I designed, it asks me to use techniques like dropout and batc
 Overall, ChatGPT and Github Copilot really helped and guided me in some of the common practices and explains what is the pros and cons of different models and tools. I personally code up most of the code myself but the guidance of AI really saved me time to do extra experiments. 
 
 
+## Files
+
+https://github.com/dl4ds-gh-classroom/dl4ds-spring-2025-midterm-challenge-tigeryi1998
+
+Python files
+
+```bash
+simplecnn.py
+densenet.py
+finetune.py
+```
+Bash files
+
+```bash
+simplecnn.sh
+densenet.sh
+finetune.sh
+```
+
+Submission_ood.csv is too big to upload to Github
+
+output files
+```bash
+[simplecnn, densenet, finetune].o#######
+```
+
 ## Data Transformation 
 
 For CIFAR100 32x32 Images. First split into 80% of training images and 20% validation images. The rest of test imags won't ever go into model training or validation and test imags will be held out. 
