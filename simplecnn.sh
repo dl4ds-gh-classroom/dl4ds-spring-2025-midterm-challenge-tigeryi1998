@@ -17,4 +17,4 @@ conda activate dl4ds
 python simplecnn.py
 
 # job submission use: 
-# qsub run.sh
+# qsub simplecnn.sh

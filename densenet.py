@@ -7,6 +7,7 @@ import torchvision
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 from torch.utils.data import DataLoader, random_split
+from torchvision.models import densenet121
 import os
 import numpy as np
 import pandas as pd
@@ -21,49 +22,29 @@ import json
 # for Part 3 you have the option of using a predefined, pretrained network to
 # finetune.
 ################################################################################
-class SimpleCNN(nn.Module):
-    def __init__(self):
-        super(SimpleCNN, self).__init__()
 
-        # TODO - define the layers of the network you will use
-        # Convolutional layers
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1)  # (32, 32, 32)
-        self.bn1 = nn.BatchNorm2d(32)
+# Part 2: Predefined Model
+class DenseNet_CIFAR100(nn.Module):
+    def __init__(self, num_classes=100):
+        super(DenseNet_CIFAR100, self).__init__()
         
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)  # (64, 32, 32)
-        self.bn2 = nn.BatchNorm2d(64)
+        # Load DenseNet-121 model
+        self.densenet = densenet121(weights=None)  # No pre-trained weights
 
-        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)  # (128, 32, 32)
-        self.bn3 = nn.BatchNorm2d(128)
+        # Modify the first convolution layer to adapt for CIFAR-100 (32x32 images)
+        self.densenet.features.conv0 = nn.Conv2d(
+            in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1, bias=False
+        )
 
-        # Pooling layer
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)  # Downsize (H, W) → Half
+        # Remove the first max pooling layer (not needed for small images)
+        self.densenet.features.pool0 = nn.Identity()
 
-        # Fully connected layers
-        self.fc1 = nn.Linear(128 * 4 * 4, 256)  # FC layer
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 100)  # CIFAR-100 has 100 classes
+        # Modify the classifier for CIFAR-100 (100 classes instead of 1000)
+        in_features = self.densenet.classifier.in_features
+        self.densenet.classifier = nn.Linear(in_features, num_classes)
 
-        # Dropout to prevent overfitting
-        self.dropout = nn.Dropout(0.5)
-
-        # Flatten layer
-        self.flatten = nn.Flatten()
-    
     def forward(self, x):
-        # TODO - define the forward pass of the network you will use
-        x = self.pool(F.relu(self.bn1(self.conv1(x))))  # (32, 16, 16)
-        x = self.pool(F.relu(self.bn2(self.conv2(x))))  # (64, 8, 8)
-        x = self.pool(F.relu(self.bn3(self.conv3(x))))  # (128, 4, 4)
-
-        x = self.flatten(x)  # Flatten layer
-
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)  # No ReLU for final layer (logits output)
-
-        return x
+        return self.densenet(x)
 
 ################################################################################
 # Define a one epoch training function
@@ -174,15 +155,15 @@ def main():
 
 
     CONFIG = {
-        "model": "SimpleCNN",    # Change name when using a different model
-        "batch_size": 32,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.1,    # learning rate
+        "model": "DenseNet",     # Change name when using a different model
+        "batch_size": 64,        # run batch size finder to find optimal batch size
+        "learning_rate": 0.1,    # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 5e-4,    # L2 penalty
-        "epochs": 20,             # Train for longer in a real scenario
-        "num_workers": 4,        # Adjust based on your system
+        "epochs": 5,             # Train for longer in a real scenario
+        "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
-        "data_dir": "./data",   # Make sure this directory exists
+        "data_dir": "./data",    # Make sure this directory exists
         "ood_dir": "./data/ood-test",
         "wandb_project": "sp25-ds542-challenge",
         "seed": 42,
@@ -251,18 +232,15 @@ def main():
     ############################################################################
       
     # instantiate your model ### TODO
-    model = SimpleCNN() 
+    model = DenseNet_CIFAR100() 
 
     # move it to target device
-    model = model.to(CONFIG["device"])   
-
-    print("\nModel summary:")
-    print(f"{model}\n")
+    model = model.to(CONFIG["device"])
 
     # The following code you can run once to find the batch size that gives you the fastest throughput.
     # You only have to do this once for each machine you use, then you can just
     # set it in CONFIG.
-    SEARCH_BATCH_SIZES = False
+    SEARCH_BATCH_SIZES = True
     if SEARCH_BATCH_SIZES:
         from utils import find_optimal_batch_size
         print("Finding optimal batch size...")
@@ -280,28 +258,49 @@ def main():
 
     ### TODO -- define optimizer
     # weight delay for L2 penalty 
-    optimizer = torch.optim.SGD(model.parameters(), lr=CONFIG["learning_rate"], momentum=CONFIG["momentum"], weight_decay=CONFIG["weight_decay"]) 
+    optimizer = torch.optim.SGD(model.parameters(), lr=CONFIG["learning_rate"], momentum=CONFIG["momentum"], weight_decay=CONFIG["weight_decay"])  
 
     # Add a scheduler   
     # ### TODO -- you can optionally add a LR scheduler
-    
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR by a factor of 0.1 every 5 epochs
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  # Cosine annealing
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)  # Reduce LR when validation loss plateaus
 
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)  # Reduce LR by a factor of 0.1 every 5 epochs
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG["epochs"])  
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)  # Reduce LR when validation loss plateaus
 
     # Initialize wandb
     wandb.init(project="-sp25-ds542-challenge", config=CONFIG)
     wandb.watch(model)  # watch the model gradients
 
+    # Check if the pre-trained model exists
+    model_path = "best_model.pth"
+    start_epoch = 0  # Default to 0 if no model is found
+
+    if os.path.exists(model_path):
+        # Load the model weights
+        checkpoint = torch.load(model_path, map_location=CONFIG["device"])
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])  # Load optimizer state
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])  # Load scheduler state (if any)
+        start_epoch = checkpoint["epoch"] + 1  # Start from the next epoch
+        best_val_acc = checkpoint["best_val_acc"]  # Use the stored best accuracy
+    else:
+        print(f"No pre-trained model found at {model_path}. Training from scratch.")  
+        best_val_acc = 0.0
+
+    print("\nModel summary:")
+    print(f"{model}\n")
+
     ############################################################################
     # --- Training Loop (Example - Students need to complete) ---
     ############################################################################
-    best_val_acc = 0.0
+    
+    # best_val_acc = 0.0
 
-    for epoch in range(CONFIG["epochs"]):
+    for epoch in range(start_epoch, CONFIG["epochs"]):
         train_loss, train_acc = train(epoch, model, trainloader, optimizer, criterion, CONFIG)
         val_loss, val_acc = validate(model, valloader, criterion, CONFIG["device"])
+        
+        # Update the learning rate scheduler
         scheduler.step()
 
         # log to WandB
@@ -317,8 +316,15 @@ def main():
         # Save the best model (based on validation accuracy)
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), "best_model.pth")
-            wandb.save("best_model.pth") # Save to wandb as well
+            torch.save({
+                "epoch": epoch,                                     # Current epoch
+                "model_state_dict": model.state_dict(),             # Model weights
+                "optimizer_state_dict": optimizer.state_dict(),     # Optimizer state
+                "scheduler_state_dict": scheduler.state_dict(),     # Scheduler state
+                "best_val_acc": best_val_acc                        # Best validation accuracy
+            }, model_path)
+
+            wandb.save(model_path) # Save to wandb as well
 
     wandb.finish()
 
