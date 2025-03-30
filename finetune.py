@@ -29,7 +29,7 @@ class DenseNet_CIFAR100(nn.Module):
         super(DenseNet_CIFAR100, self).__init__()
         
         # Load DenseNet-121 model
-        self.densenet = densenet121(weights=None)  # No pre-trained weights
+        self.densenet = densenet121(weights="IMAGENET1K_V1")  # Load pre-trained weights
 
         # Modify the first convolution layer to adapt for CIFAR-100 (32x32 images)
         self.densenet.features.conv0 = nn.Conv2d(
@@ -42,6 +42,14 @@ class DenseNet_CIFAR100(nn.Module):
         # Modify the classifier for CIFAR-100 (100 classes instead of 1000)
         in_features = self.densenet.classifier.in_features
         self.densenet.classifier = nn.Linear(in_features, num_classes)
+
+        # Freeze all layers except the final classifier layer
+        for param in self.densenet.parameters():
+            param.requires_grad = False 
+
+        # Unfreeze the final classifier layer to fine-tune it
+        for param in self.densenet.classifier.parameters():
+            param.requires_grad = True
 
     def forward(self, x):
         return self.densenet(x)
@@ -157,10 +165,10 @@ def main():
     CONFIG = {
         "model": "DenseNet",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.1,    # Learning rate for SGD
+        "learning_rate": 0.001,  # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
-        "weight_decay": 5e-4,    # L2 penalty
-        "epochs": 5,             # Train for longer in a real scenario
+        "weight_decay": 1e-4,    # L2 penalty
+        "epochs": 10,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
         "device": "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu",
         "data_dir": "./data",    # Make sure this directory exists
