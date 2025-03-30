@@ -43,8 +43,12 @@ class DenseNet_CIFAR100(nn.Module):
         in_features = self.densenet.classifier.in_features
         self.densenet.classifier = nn.Linear(in_features, num_classes)
 
-        # Freeze all layers except the final classifier layer
-        for param in self.densenet.features.parameters():
+        # Freeze all initial layers
+        for param in self.densenet.features[0:3].parameters():
+            param.requires_grad = False 
+
+        # Unfreeze the dense blocks
+        for param in self.densenet.features[3:].parameters():
             param.requires_grad = False 
 
         # Unfreeze the final classifier layer to fine-tune it
@@ -166,7 +170,7 @@ def main():
         "model": "DenseNet",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
         "learning_rate": 0.05,  # Learning rate for SGD
-        "momentum": 0.8,         # Momentum for SGD
+        "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 5e-4,    # L2 penalty
         "epochs": 10,            # Train for longer in a real scenario
         "num_workers": 8,        # Adjust based on your system
