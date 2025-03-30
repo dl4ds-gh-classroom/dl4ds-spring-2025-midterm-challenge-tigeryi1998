@@ -280,7 +280,7 @@ def main():
     wandb.watch(model)  # watch the model gradients
 
     # Check if the pre-trained model exists
-    model_path = "best_model.pth"
+    model_path = "finetune.pth"
     start_epoch = 0  # Default to 0 if no model is found
 
     if os.path.exists(model_path):
