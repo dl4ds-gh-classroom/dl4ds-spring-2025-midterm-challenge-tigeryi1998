@@ -15,3 +15,7 @@ experiments/
 # hidden files
 .DS_Store
 .vscode/
+
+
+# csv
+*.csv

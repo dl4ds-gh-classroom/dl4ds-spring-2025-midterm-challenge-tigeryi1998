@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, TensorDataset
 import os
 import numpy as np
 import pandas as pd
@@ -23,10 +24,10 @@ def evaluate_ood(model, distortion_name, severity, CONFIG):
     images = images[start_index:end_index]
 
     # Convert to PyTorch tensors and create DataLoader
-    images = torch.from_numpy(images).float() / 255.  # Normalize to [0, 1]
+    images = torch.from_numpy(images).float() / 255.0  # Normalize to [0, 1]
     images = images.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
-    dataset = torch.utils.data.TensorDataset(images)
-    dataloader = torch.utils.data.DataLoader(
+    dataset = TensorDataset(images)
+    dataloader = DataLoader(
         dataset, 
         batch_size=CONFIG["batch_size"], 
         shuffle=False, 
