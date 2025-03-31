@@ -190,7 +190,7 @@ def main():
     CONFIG = {
         "model": "DenseNet-finetune",     # Change name when using a different model
         "batch_size": 64,        # run batch size finder to find optimal batch size
-        "learning_rate": 0.1,  # Learning rate for SGD
+        "learning_rate": 0.05,  # Learning rate for SGD
         "momentum": 0.9,         # Momentum for SGD
         "weight_decay": 5e-4,    # L2 penalty
         "epochs": 100,            # Train for longer in a real scenario
